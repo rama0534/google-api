@@ -6,6 +6,7 @@ import com.google.api.client.extensions.jetty.auth.oauth2.LocalServerReceiver;
 import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow;
 import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets;
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
+import com.google.api.client.googleapis.json.GoogleJsonResponseException;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.gson.GsonFactory;
@@ -13,6 +14,7 @@ import com.google.api.client.util.store.FileDataStoreFactory;
 import com.google.api.services.sheets.v4.Sheets;
 import com.google.api.services.sheets.v4.SheetsScopes;
 import com.google.api.services.sheets.v4.model.ValueRange;
+import org.apache.coyote.BadRequestException;
 import org.rama.googleapi.GoogleApiDto;
 import org.rama.googleapi.exceptions.NoDataFoundException;
 import org.springframework.stereotype.Component;
@@ -28,9 +30,7 @@ import java.util.List;
 @Component
 public class GoogleApiConfig {
 
-    private static final String APPLICATION_NAME = "Google Sheets API";
-    private static final JsonFactory JSON_FACTORY = GsonFactory.getDefaultInstance();
-    private static final String TOKENS_DIRECTORY_PATH = "tokens";
+    private final JsonFactory JSON_FACTORY = GsonFactory.getDefaultInstance();
 
     /**
      * Global instance of the scopes required by this Google Api.
@@ -48,7 +48,7 @@ public class GoogleApiConfig {
      * @return An authorized Credential object.
      * @throws IOException If the credentials.json file cannot be found.
      */
-    private static Credential getCredentials(final NetHttpTransport HTTP_TRANSPORT)
+    private Credential getCredentials(final NetHttpTransport HTTP_TRANSPORT)
             throws IOException {
         // Load local secrets.
         InputStream in = GoogleApiConfig.class.getResourceAsStream(CREDENTIALS_FILE_PATH);
@@ -59,6 +59,7 @@ public class GoogleApiConfig {
                 GoogleClientSecrets.load(JSON_FACTORY, new InputStreamReader(in));
 
         // Build flow and trigger user authorization request.
+        String TOKENS_DIRECTORY_PATH = "tokens";
         GoogleAuthorizationCodeFlow flow = new GoogleAuthorizationCodeFlow.Builder(
                 HTTP_TRANSPORT, JSON_FACTORY, clientSecrets, SCOPES)
                 .setDataStoreFactory(new FileDataStoreFactory(new java.io.File(TOKENS_DIRECTORY_PATH)))
@@ -71,29 +72,41 @@ public class GoogleApiConfig {
     /**
      * Returns a range of values from a spreadsheet.
      *
-     * @param request spreadSheetId - Id of the spreadsheet.
+     * @param request spreadSheetId - ID of the spreadsheet.
      * @param request range        - Range of cells of the spreadsheet.
      * @return Values in the range
      * @throws IOException - if credentials file not found.
      */
-    public List<List<Object>> getDataFromSheet(GoogleApiDto request) throws IOException, GeneralSecurityException {
-        final String spreadsheetId = request.getSpreadSheetId();
-        final String range = request.getRange();
-        Sheets service = getService();
-        // Return Spread Sheet values in the given range
-        ValueRange response = service.spreadsheets().values()
-                .get(spreadsheetId, range)
-                .execute();
-        List<List<Object>> values = response.getValues();
-        if (values == null || values.isEmpty()){
-            throw new NoDataFoundException("No data found in the specified range: " + range);
-        }
-        return values;
+    public List<List<Object>> getDataFromSheet(GoogleApiDto request) throws IOException {
+       try {
+            final String spreadsheetId = request.getSpreadSheetId();
+            final String range = request.getRange();
+            Sheets service = getService();
+
+            // Return Spread Sheet values in the given range
+            ValueRange response = service.spreadsheets().values()
+                    .get(spreadsheetId, range)
+                    .execute();
+            List<List<Object>> values = response.getValues();
+            if (values == null || values.isEmpty()) {
+                throw new NoDataFoundException("No data found in the specified range: " + range);
+            }
+            return values;
+        } catch (GoogleJsonResponseException e) {
+           if (e.getStatusCode() == 400) {
+               throw new BadRequestException("Bad request: " + e);
+           } else {
+               throw e;
+           }
+       }catch (IOException | GeneralSecurityException e) {
+           throw new RuntimeException("Error accessing Google Sheets API", e);
+       }
     }
 
     // Build a new authorized API client service.
-    private static Sheets getService() throws GeneralSecurityException, IOException {
+    private Sheets getService() throws GeneralSecurityException, IOException {
         final NetHttpTransport HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport();
+        String APPLICATION_NAME = "Google Sheets API";
         return new Sheets.Builder(HTTP_TRANSPORT, JSON_FACTORY, getCredentials(HTTP_TRANSPORT))
                 .setApplicationName(APPLICATION_NAME)
                 .build();
