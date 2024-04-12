@@ -14,6 +14,7 @@ import com.google.api.services.sheets.v4.Sheets;
 import com.google.api.services.sheets.v4.SheetsScopes;
 import com.google.api.services.sheets.v4.model.ValueRange;
 import org.rama.googleapi.GoogleApiDto;
+import org.rama.googleapi.exceptions.NoDataFoundException;
 import org.springframework.stereotype.Component;
 
 import java.io.FileNotFoundException;
@@ -67,8 +68,6 @@ public class GoogleApiConfig {
         return new AuthorizationCodeInstalledApp(flow, receiver).authorize("user");
     }
 
-
-
     /**
      * Returns a range of values from a spreadsheet.
      *
@@ -77,14 +76,19 @@ public class GoogleApiConfig {
      * @return Values in the range
      * @throws IOException - if credentials file not found.
      */
-    public ValueRange getDataFromSheet(GoogleApiDto request) throws IOException, GeneralSecurityException {
+    public List<List<Object>> getDataFromSheet(GoogleApiDto request) throws IOException, GeneralSecurityException {
         final String spreadsheetId = request.getSpreadSheetId();
         final String range = request.getRange();
         Sheets service = getService();
         // Return Spread Sheet values in the given range
-        return service.spreadsheets().values()
+        ValueRange response = service.spreadsheets().values()
                 .get(spreadsheetId, range)
                 .execute();
+        List<List<Object>> values = response.getValues();
+        if (values == null || values.isEmpty()){
+            throw new NoDataFoundException("No data found in the specified range: " + range);
+        }
+        return values;
     }
 
     // Build a new authorized API client service.

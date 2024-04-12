@@ -1,6 +1,5 @@
 package org.rama.googleapi.controller;
 
-import com.google.api.services.sheets.v4.model.ValueRange;
 import org.rama.googleapi.GoogleApiDto;
 import org.rama.googleapi.service.GoogleApiService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,6 +9,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
+import java.util.List;
 
 @RestController
 public class Dashboard {
@@ -23,7 +23,7 @@ public class Dashboard {
     }
 
     @GetMapping("/getdata")
-    public ValueRange readDataFromGoogleSheet(@RequestBody GoogleApiDto request) throws GeneralSecurityException, IOException {
+    public List<List<Object>> readDataFromGoogleSheet(@RequestBody GoogleApiDto request) throws GeneralSecurityException, IOException {
         return googleApiService.readDataFromGoogleSheet(request);
     }
 
