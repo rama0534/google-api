@@ -1,9 +1,11 @@
 package org.rama.googleapi.controller;
 
-import org.rama.googleapi.GoogleApiDto;
+import org.rama.googleapi.dto.GoogleApiDto;
+import org.rama.googleapi.dto.SpreadsheetLite;
 import org.rama.googleapi.service.GoogleApiService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -25,6 +27,11 @@ public class Dashboard {
     @GetMapping("/getdata")
     public List<List<Object>> readDataFromGoogleSheet(@RequestBody GoogleApiDto request) throws GeneralSecurityException, IOException {
         return googleApiService.readDataFromGoogleSheet(request);
+    }
+
+    @PostMapping("/create")
+    public SpreadsheetLite createSheet(@RequestBody GoogleApiDto request) throws GeneralSecurityException, IOException {
+        return googleApiService.createSheet(request);
     }
 
 

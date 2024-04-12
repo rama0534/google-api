@@ -1,4 +1,4 @@
-package org.rama.googleapi;
+package org.rama.googleapi.dto;
 
 import lombok.Data;
 
@@ -6,4 +6,5 @@ import lombok.Data;
 public class GoogleApiDto {
     private String spreadSheetId;
     private String range;
+    private String sheetName;
 }
