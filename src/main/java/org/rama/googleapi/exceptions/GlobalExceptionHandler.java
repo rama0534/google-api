@@ -20,4 +20,9 @@ public class GlobalExceptionHandler {
         return "No Spreadsheet found" + ex.getMessage();
     }
 
+    @ExceptionHandler(NotAuthorizedException.class)
+    public String handleNotAuthorizedException(NotAuthorizedException ex) {
+        return "Forbidden" + ex.getMessage();
+    }
+
 }

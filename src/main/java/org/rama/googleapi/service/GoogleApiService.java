@@ -9,6 +9,7 @@ import org.rama.googleapi.config.GoogleApiConfig;
 import org.rama.googleapi.dto.SpreadsheetLite;
 import org.rama.googleapi.exceptions.NoDataFoundException;
 import org.rama.googleapi.exceptions.NoSpreadSheetFoundException;
+import org.rama.googleapi.exceptions.NotAuthorizedException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -52,6 +53,8 @@ public class GoogleApiService {
         } catch (GoogleJsonResponseException e) {
             if (e.getStatusCode() == 400) {
                 throw new BadRequestException("Bad request: " + e);
+            } else if (e.getStatusCode() == 403) {
+                throw new NotAuthorizedException("Forbidden:" + e);
             } else {
                 throw e;
             }
@@ -117,7 +120,9 @@ public class GoogleApiService {
         }   catch (GoogleJsonResponseException e) {
                 if (e.getStatusCode() == 404) {
                     throw new NoSpreadSheetFoundException("No Spreadsheet found " + e);
-                } else if (e.getStatusCode() == 400) {
+                } else if (e.getStatusCode() == 403) {
+                    throw new NotAuthorizedException("Forbidden:" + e);
+                }else if (e.getStatusCode() == 400) {
                     throw new BadRequestException("Bad request: " + e);
                 } else {
                     throw e;

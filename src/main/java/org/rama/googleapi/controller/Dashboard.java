@@ -2,6 +2,7 @@ package org.rama.googleapi.controller;
 
 import org.rama.googleapi.dto.GoogleApiDto;
 import org.rama.googleapi.dto.SpreadsheetLite;
+import org.rama.googleapi.exceptions.NotAuthorizedException;
 import org.rama.googleapi.service.GoogleApiService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -25,17 +26,17 @@ public class Dashboard {
     }
 
     @GetMapping("/getdata")
-    public List<List<Object>> readDataFromGoogleSheet(@RequestBody GoogleApiDto request) throws GeneralSecurityException, IOException {
+    public List<List<Object>> readDataFromGoogleSheet(@RequestBody GoogleApiDto request) throws GeneralSecurityException, IOException, NotAuthorizedException {
         return googleApiService.readDataFromGoogleSheet(request);
     }
 
     @PostMapping("/create")
-    public SpreadsheetLite createSheet(@RequestBody GoogleApiDto request) throws GeneralSecurityException, IOException {
+    public SpreadsheetLite createSheet(@RequestBody GoogleApiDto request){
         return googleApiService.createSheet(request);
     }
 
     @PostMapping("/update")
-    public List<List<Object>> updateSheet(@RequestBody GoogleApiDto request) throws GeneralSecurityException, IOException {
+    public List<List<Object>> updateSheet(@RequestBody GoogleApiDto request) throws IOException {
         return googleApiService.updateSheet(request);
     }
 }
