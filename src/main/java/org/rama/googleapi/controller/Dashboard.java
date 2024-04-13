@@ -34,6 +34,8 @@ public class Dashboard {
         return googleApiService.createSheet(request);
     }
 
-
-
+    @PostMapping("/update")
+    public List<List<Object>> updateSheet(@RequestBody GoogleApiDto request) throws GeneralSecurityException, IOException {
+        return googleApiService.updateSheet(request);
+    }
 }

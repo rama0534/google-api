@@ -24,4 +24,8 @@ public class GoogleApiService {
     public SpreadsheetLite createSheet(GoogleApiDto request) throws GeneralSecurityException, IOException {
         return googleApiConfig.createSheet(request);
     }
+
+    public List<List<Object>> updateSheet(GoogleApiDto request) throws GeneralSecurityException, IOException {
+        return googleApiConfig.updateSheet(request);
+    }
 }

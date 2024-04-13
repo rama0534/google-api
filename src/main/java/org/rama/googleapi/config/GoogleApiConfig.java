@@ -18,6 +18,7 @@ import org.apache.coyote.BadRequestException;
 import org.rama.googleapi.dto.GoogleApiDto;
 import org.rama.googleapi.dto.SpreadsheetLite;
 import org.rama.googleapi.exceptions.NoDataFoundException;
+import org.rama.googleapi.exceptions.NoSpreadSheetFoundException;
 import org.springframework.stereotype.Component;
 
 import java.io.FileNotFoundException;
@@ -127,13 +128,43 @@ public class GoogleApiConfig {
             spreadsheetProperties.setTitle(request.getSheetName());
             Spreadsheet spreadsheet = new Spreadsheet().setProperties(spreadsheetProperties).setSheets(Collections.singletonList(sheet));
 
-
             // Creating a spread Sheet
             Spreadsheet createResponse = service.spreadsheets().create(spreadsheet).execute();
 
             return new SpreadsheetLite(createResponse);
         } catch (IOException | GeneralSecurityException e) {
             throw new RuntimeException("Error Creating Google Sheets API", e);
+        }
+    }
+
+    /**
+     * Update and Returns values from a spreadsheet.
+     * @param request spreadSheetId - ID of the spreadsheet.
+     * @param request range        - Range of cells of the spreadsheet.
+     * @return all Values in the spreadsheet
+     * @throws IOException - if credentials file not found.
+     * @throws NoSpreadSheetFoundException - if no spreadsheet found.
+     */
+    public List<List<Object>> updateSheet(GoogleApiDto request) throws IOException {
+        try {
+            Sheets service = getService();
+            ValueRange valueRange = new ValueRange().setValues(request.getDataToBeUpload());
+            service.spreadsheets().values().update(request.getSpreadSheetId(), request.getRange(), valueRange).setValueInputOption("RAW").execute();
+            String stringOne = request.getRange();
+            String newRange = stringOne.substring(0, stringOne.indexOf('!'));
+            System.out.println(newRange);
+            request.setRange(newRange);
+            List<List<Object>> values = getDataFromSheet(request);
+            System.out.println(values);
+            return values;
+        }  catch (GoogleJsonResponseException e) {
+            if (e.getStatusCode() == 404) {
+                throw new NoSpreadSheetFoundException("No Spreadsheet found " + e);
+            } else {
+                throw e;
+            }
+        }catch (IOException | GeneralSecurityException e) {
+            throw new RuntimeException("Error accessing Google Sheets API", e);
         }
     }
 
