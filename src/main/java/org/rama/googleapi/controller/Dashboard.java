@@ -1,5 +1,7 @@
 package org.rama.googleapi.controller;
 
+import com.google.api.client.googleapis.json.GoogleJsonResponseException;
+import org.apache.coyote.BadRequestException;
 import org.rama.googleapi.dto.GoogleApiDto;
 import org.rama.googleapi.dto.SpreadsheetLite;
 import org.rama.googleapi.exceptions.NotAuthorizedException;
@@ -31,7 +33,7 @@ public class Dashboard {
     }
 
     @PostMapping("/create")
-    public SpreadsheetLite createSheet(@RequestBody GoogleApiDto request){
+    public SpreadsheetLite createSheet(@RequestBody GoogleApiDto request) throws GoogleJsonResponseException, BadRequestException {
         return googleApiService.createSheet(request);
     }
 

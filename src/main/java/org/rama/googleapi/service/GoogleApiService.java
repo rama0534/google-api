@@ -4,12 +4,11 @@ import com.google.api.client.googleapis.json.GoogleJsonResponseException;
 import com.google.api.services.sheets.v4.Sheets;
 import com.google.api.services.sheets.v4.model.*;
 import org.apache.coyote.BadRequestException;
-import org.rama.googleapi.dto.GoogleApiDto;
 import org.rama.googleapi.config.GoogleApiConfig;
+import org.rama.googleapi.dto.GoogleApiDto;
 import org.rama.googleapi.dto.SpreadsheetLite;
+import org.rama.googleapi.exceptions.HandleException;
 import org.rama.googleapi.exceptions.NoDataFoundException;
-import org.rama.googleapi.exceptions.NoSpreadSheetFoundException;
-import org.rama.googleapi.exceptions.NotAuthorizedException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -24,12 +23,14 @@ public class GoogleApiService {
     @Autowired
     private GoogleApiConfig googleApiConfig;
 
+    @Autowired
+    private HandleException handleException;
+
 
     /**
      * Returns a range of values from a spreadsheet.
      *
-     * @param request spreadSheetId - ID of the spreadsheet.
-     * @param request range        - Range of cells of the spreadsheet.
+     * @param request spreadSheetId - ID of the spreadsheet and request range     - Range of cells of the spreadsheet.
      * @return Values in the range
      * @throws IOException - if credentials file not found.
      * @throws BadRequestException - if send any bad request like range.
@@ -51,13 +52,8 @@ public class GoogleApiService {
             }
             return values;
         } catch (GoogleJsonResponseException e) {
-            if (e.getStatusCode() == 400) {
-                throw new BadRequestException("Bad request: " + e);
-            } else if (e.getStatusCode() == 403) {
-                throw new NotAuthorizedException("Forbidden:" + e);
-            } else {
-                throw e;
-            }
+             handleException.handleRuntimeException(e);
+             throw e;
         }catch (IOException | GeneralSecurityException e) {
             throw new RuntimeException("Error accessing Google Sheets API", e);
         }
@@ -69,7 +65,7 @@ public class GoogleApiService {
      * @param request SheetName - Name of the spreadsheet and sheet.
      * @return SpreadSheet ID and URL
      */
-    public SpreadsheetLite createSheet(GoogleApiDto request) {
+    public SpreadsheetLite createSheet(GoogleApiDto request) throws GoogleJsonResponseException, BadRequestException {
         try {
             Sheets service = googleApiConfig.getService();
 
@@ -87,6 +83,9 @@ public class GoogleApiService {
             Spreadsheet createResponse = service.spreadsheets().create(spreadsheet).execute();
 
             return new SpreadsheetLite(createResponse);
+        } catch (GoogleJsonResponseException e) {
+            handleException.handleRuntimeException(e);
+            throw e;
         } catch (IOException | GeneralSecurityException e) {
             throw new RuntimeException("Error Creating Google Sheets API", e);
         }
@@ -116,15 +115,8 @@ public class GoogleApiService {
             System.out.println(values);
             return values;
         }   catch (GoogleJsonResponseException e) {
-                if (e.getStatusCode() == 404) {
-                    throw new NoSpreadSheetFoundException("No Spreadsheet found " + e);
-                } else if (e.getStatusCode() == 403) {
-                    throw new NotAuthorizedException("Forbidden:" + e);
-                }else if (e.getStatusCode() == 400) {
-                    throw new BadRequestException("Bad request: " + e);
-                } else {
-                    throw e;
-            }
+            handleException.handleRuntimeException(e);
+            throw e;
         }  catch (IOException | GeneralSecurityException e) {
              throw new RuntimeException("Error accessing Google Sheets API", e);
         }
@@ -144,15 +136,8 @@ public class GoogleApiService {
             System.out.println(values);
             return values;
         } catch (GoogleJsonResponseException e) {
-            if (e.getStatusCode() == 404) {
-                throw new NoSpreadSheetFoundException("No Spreadsheet found " + e);
-            } else if (e.getStatusCode() == 403) {
-                throw new NotAuthorizedException("Forbidden:" + e);
-            }else if (e.getStatusCode() == 400) {
-                throw new BadRequestException("Bad request: " + e);
-            } else {
-                throw e;
-            }
+            handleException.handleRuntimeException(e);
+            throw e;
         }  catch (IOException | GeneralSecurityException e) {
             throw new RuntimeException("Error accessing Google Sheets API", e);
         }
