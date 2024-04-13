@@ -39,4 +39,10 @@ public class Dashboard {
     public List<List<Object>> updateSheet(@RequestBody GoogleApiDto request) throws IOException {
         return googleApiService.updateSheet(request);
     }
+
+    @PostMapping("/append")
+    public List<List<Object>> appendSheet(@RequestBody GoogleApiDto request) throws IOException {
+        System.out.println("from append ");
+        return googleApiService.appendSheet(request);
+    }
 }

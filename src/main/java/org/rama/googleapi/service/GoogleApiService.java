@@ -109,9 +109,7 @@ public class GoogleApiService {
             service.spreadsheets().values().update(request.getSpreadSheetId(), request.getRange(), valueRange).setValueInputOption("RAW").execute();
 
             // To display whole sheet changing the range to sheet level
-            String stringOne = request.getRange();
-            String newRange = stringOne.substring(0, stringOne.indexOf('!'));
-            request.setRange(newRange);
+            newRange(request);
 
             // Fetching New data from spreadsheet.
             List<List<Object>> values = readDataFromGoogleSheet(request);
@@ -129,6 +127,42 @@ public class GoogleApiService {
             }
         }  catch (IOException | GeneralSecurityException e) {
              throw new RuntimeException("Error accessing Google Sheets API", e);
+        }
+    }
+
+    public List<List<Object>> appendSheet(GoogleApiDto request) throws IOException {
+        try {
+            Sheets service = googleApiConfig.getService();
+            ValueRange valueRange = new ValueRange().setValues(request.getDataToBeUpload());
+            service.spreadsheets().values().append(request.getSpreadSheetId(), request.getRange(), valueRange).setValueInputOption("RAW").execute();
+
+            // To display whole sheet changing the range to sheet level
+            newRange(request);
+
+            // Fetching New data from spreadsheet.
+            List<List<Object>> values = readDataFromGoogleSheet(request);
+            System.out.println(values);
+            return values;
+        } catch (GoogleJsonResponseException e) {
+            if (e.getStatusCode() == 404) {
+                throw new NoSpreadSheetFoundException("No Spreadsheet found " + e);
+            } else if (e.getStatusCode() == 403) {
+                throw new NotAuthorizedException("Forbidden:" + e);
+            }else if (e.getStatusCode() == 400) {
+                throw new BadRequestException("Bad request: " + e);
+            } else {
+                throw e;
+            }
+        }  catch (IOException | GeneralSecurityException e) {
+            throw new RuntimeException("Error accessing Google Sheets API", e);
+        }
+    }
+
+    private static void newRange(GoogleApiDto request) {
+        String stringOne = request.getRange();
+        if (stringOne.indexOf('!') > 0){
+            String newRange = stringOne.substring(0, stringOne.indexOf('!'));
+            request.setRange(newRange);
         }
     }
 }
